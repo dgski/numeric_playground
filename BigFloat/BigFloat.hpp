@@ -9,8 +9,6 @@ class BigFloat {
     BigInt _mantissa;
     int64_t _exponent;
 
-    static const int64_t defaultPrecisionExponent = 10;
-
     BigFloat() : _mantissa("0"), _exponent(0) {}
 
     BigFloat usingExponent(int64_t exponent) const {
@@ -80,12 +78,26 @@ public:
     bool operator==(const BigFloat& other) const {
         const auto exponent = std::min(_exponent, other._exponent);
         auto one = usingExponent(exponent);
-        auto two = usingExponent(exponent);
-        return std::tie(one._mantissa, one._exponent) == std::tie(two._mantissa, two._exponent);
+        auto two = other.usingExponent(exponent);
+        return one._mantissa == two._mantissa;
     }
 
     bool operator!=(const BigFloat& other) const {
         return !(*this == other);
+    }
+
+    bool operator<(const BigFloat& other) const {
+        const auto exponent = std::min(_exponent, other._exponent);
+        auto one = usingExponent(exponent);
+        auto two = other.usingExponent(exponent);
+        return one._mantissa < two._mantissa;
+    }
+
+    bool operator>(const BigFloat& other) const {
+        const auto exponent = std::min(_exponent, other._exponent);
+        auto one = usingExponent(exponent);
+        auto two = other.usingExponent(exponent);
+        return one._mantissa > two._mantissa;
     }
 };
 
@@ -94,7 +106,7 @@ std::ostream& operator<<(std::ostream& os, const BigFloat& value)
     std::ostringstream ss;
     ss << value._mantissa;
     auto str = ss.str();
-    str.insert(str.end() + value._exponent, '.');
+    str.insert(str.end() + value._exponent + (value._mantissa > BigInt("0") ? 0 : -1), '.');
     os << str;
     return os;
 }

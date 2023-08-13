@@ -259,11 +259,16 @@ public:
     }
 
     void timesTenToThe(int exponent) {
-        auto multiplier = BigInt("1");
-        for (int i=0; i<exponent; ++i) {
-            multiplier = multiplier * BigInt("10");
+        const bool divide = exponent < 0;
+
+        auto multiplier = BigInt("10");
+        for (int i=0; i<std::abs(exponent); ++i) {
+            if (divide) {
+                *this = *this / multiplier;
+            } else {
+                *this = *this * multiplier;
+            }
         }
-        *this = *this * multiplier;
     }
 };
 
