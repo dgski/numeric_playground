@@ -202,11 +202,11 @@ public:
         multiplier.divideByTen();
 
         auto result = BigInt("0");
-        auto remaining = *this;
-        remaining._negative = false;
-        while (remaining >= other) {
+        auto remaining = absoluteValue();
+        auto chunkToSubtract = other * multiplier;
+        while (remaining >= chunkToSubtract) {
             result = result + multiplier;
-            remaining = remaining - (other * multiplier);
+            remaining = remaining - chunkToSubtract;
         }
 
         if (!(_negative && other._negative) && (_negative || other._negative)) {
@@ -217,7 +217,7 @@ public:
             return result;
         }
 
-        return remaining / other;
+        return result + (remaining / other);
     }
 
     bool operator==(const BigInt& other) const {
@@ -256,6 +256,14 @@ public:
 
     bool operator>=(const BigInt& other) const {
         return (*this == other) || (*this > other);
+    }
+
+    void timesTenToThe(int exponent) {
+        auto multiplier = BigInt("1");
+        for (int i=0; i<exponent; ++i) {
+            multiplier = multiplier * BigInt("10");
+        }
+        *this = *this * multiplier;
     }
 };
 

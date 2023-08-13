@@ -1,5 +1,28 @@
 #include "BigFloat.hpp"
 
+/*
+auto squareRootBinarySearch(BigFloat x, BigFloat epsilon = BigFloat("0.00000001")) {
+    if (x < 0) {
+        return BigFloat("-1.0");
+    }
+    
+    BigFloat left("0.0");
+    BigFloat right = x;
+    BigFloat mid("0.0");
+    
+    while (right - left > epsilon) {
+        mid = (left + right) / BigFloat("2.0");
+        if (mid * mid > x) {
+            right = mid;
+        } else {
+            left = mid;
+        }
+    }
+    
+    return left;
+}
+*/
+
 int main() {
     // printing
     BigFloat printTestValue("104242342123123234.2320");
@@ -39,12 +62,12 @@ int main() {
     }
 
     // division
+    std::cout << "division" << std::endl;
     auto divisionResult = BigFloat("10000000.0000000000000") / BigFloat("3.0000000000000");
-    if (divisionResult != BigFloat("33.3")) {
+    if (divisionResult != BigFloat("3333333.333333333333333333333333333333333333333333333333333333333333333333333333333333333333333")) {
         std::cout << "divisionResult=" << divisionResult << std::endl;
         assert(false);
     }
-
 
     return 0;
 }

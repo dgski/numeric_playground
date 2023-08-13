@@ -149,5 +149,12 @@ int main() {
         assert(false);
     }
 
+    const auto bigDivision2Result = BigInt("1000000000") / BigInt("3");
+    const auto bigDivision2Expected = BigInt("333333333");
+    if (bigDivision2Result != bigDivision2Expected) {
+        std::cout << "bigDivision2Result=" << bigDivision2Result << std::endl;
+        assert(false);
+    }
+
     return 0;
 }

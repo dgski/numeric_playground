@@ -19,11 +19,11 @@ class BigFloat {
         if (copy._exponent == exponent) {
             return copy;
         } else if (copy._exponent < exponent) {
-            copy._mantissa = copy._mantissa * BigInt(std::pow(10, (exponent - copy._exponent)));
+            copy._mantissa.timesTenToThe(exponent - copy._exponent);
             copy._exponent = exponent;
             return copy;
         } else /* copy._exponent > exponent */{
-            copy._mantissa = copy._mantissa * BigInt(std::pow(10, (copy._exponent - exponent)));
+            copy._mantissa.timesTenToThe(copy._exponent - exponent);
             copy._exponent = exponent;
             return copy;
         }
@@ -69,11 +69,12 @@ public:
     }
 
     BigFloat operator/(const BigFloat& other) const {
+        BigFloat one = usingExponent(-100);
+        BigFloat two = other;
         BigFloat result;
-        result._mantissa = _mantissa / other._mantissa;
-        std::cout << "newMantissa=" << result._mantissa << std::endl;
-        result._exponent = _exponent + other._exponent;
-        return result;
+        result._mantissa = one._mantissa / two._mantissa;
+        result._exponent = one._exponent - two._exponent;
+        return result.usingExponent(-100);
     }
 
     bool operator==(const BigFloat& other) const {
