@@ -98,7 +98,8 @@ public:
 
         const bool signFlip =
             (_negative == other._negative) &&
-            ((_negative && (*this > other)) || (!_negative && (*this < other)));
+            ((_negative && (*this > other)) ||
+            (!_negative && (*this < other)));
         if (signFlip) {
             return (other - *this).oppositelySigned();
         }
