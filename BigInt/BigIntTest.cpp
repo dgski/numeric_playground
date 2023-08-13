@@ -156,5 +156,12 @@ int main() {
         assert(false);
     }
 
+    auto tenToTheNResult = BigInt("1000000");
+    tenToTheNResult.timesTenToThe(-2);
+    if (tenToTheNResult != BigInt("10000")) {
+        std::cout << "tenToTheNResult=" << tenToTheNResult << std::endl;
+        assert(false);
+    }
+
     return 0;
 }
