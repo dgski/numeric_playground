@@ -8,30 +8,35 @@
 class BigInt {
     friend std::ostream& operator<<(std::ostream& os, const BigInt& value);
 
+    // Marks whether the number is negative
     bool _negative = false;
+    
+    // Base-10 digits starting from least significant
     std::string _digits;
+
+    // Used internally to construct new objects (invalid starting state)
     BigInt() {}
 
-    void multiplyByTen() {
-        _digits = char(0) + _digits;
-    }
+    // Primitive operations used internally 
+    void multiplyByTen() { _digits = char(0) + _digits; }
+    void divideByTen() { _digits.erase(_digits.begin()); }
 
-    void divideByTen() {
-        _digits.erase(_digits.begin());
-    }
-
+    //  Cet the opposite signed number
     BigInt oppositelySigned() const {
         auto copy = *this;
         copy._negative = !copy._negative;
         return copy;
     }
 
+    // Get the absolute value of this number
     BigInt absoluteValue() const {
         auto copy = *this;
         copy._negative = false;
         return copy;
     }
 
+    // Helper to get the least significant digit from the digit span
+    // and shrink the span to no longer include it
     static int consumeFrontDigit(std::string_view& value) {
         if (value.empty()) {
             return 0;
@@ -41,16 +46,17 @@ class BigInt {
         return int(result);
     };
 public:
+    // Construct a new object by providing a string implementation
     BigInt(std::string_view value) {
         if (value.front() == '-') {
             _negative = true;
             value.remove_prefix(1);
         }
-        _digits.reserve(value.size());
-        for (char c : value) {
-            _digits.push_back(c - '0');
+        _digits.resize(value.size());
+
+        for (size_t i=0; i<value.size(); ++i) {
+            _digits[_digits.size()-i-1] = value[i] - '0';
         }
-        std::reverse(_digits.begin(), _digits.end());
     }
 
     BigInt(int64_t value) : BigInt(std::to_string(value)) {}
@@ -142,13 +148,8 @@ public:
         if (_negative && other._negative) {
             return oppositelySigned() * other.oppositelySigned();
         }
-        if (_negative && !other._negative) {
-            auto result = oppositelySigned() * other;
-            result._negative = true;
-            return result;
-        }
-        if (!_negative && other._negative) {
-            auto result = (*this) * other.oppositelySigned();
+        if (_negative != other._negative) {
+            auto result = absoluteValue() * other.absoluteValue();
             result._negative = true;
             return result;
         }
