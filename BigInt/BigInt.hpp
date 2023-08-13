@@ -52,6 +52,10 @@ public:
             _negative = true;
             value.remove_prefix(1);
         }
+
+        while(value.front() == '0') {
+            value.remove_prefix(1);
+        }
         _digits.resize(value.size());
 
         for (size_t i=0; i<value.size(); ++i) {
