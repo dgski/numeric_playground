@@ -78,11 +78,10 @@ public:
     }
 
     bool operator==(const BigFloat& other) const {
-        // TODO: do not use strings
-        std::ostringstream one, two;
-        one << (*this);
-        two << other;
-        return one.str() == two.str();
+        const auto exponent = std::min(_exponent, other._exponent);
+        auto one = usingExponent(exponent);
+        auto two = usingExponent(exponent);
+        return std::tie(one._mantissa, one._exponent) == std::tie(two._mantissa, two._exponent);
     }
 
     bool operator!=(const BigFloat& other) const {
