@@ -19,6 +19,11 @@ class BigInt {
 
     // Primitive operations used internally 
     void multiplyByTen() { _digits = char(0) + _digits; }
+    BigInt timesTen() {
+        auto result = *this;
+        result.multiplyByTen();
+        return result;
+    }
     void divideByTen() { _digits.erase(_digits.begin()); }
 
     //  Cet the opposite signed number
@@ -46,7 +51,7 @@ public:
             value.remove_prefix(1);
         }
 
-        while(value.front() == '0') {
+        while((value.size() > 1) && value.front() == '0') {
             value.remove_prefix(1);
         }
         _digits.resize(value.size());
@@ -189,10 +194,9 @@ public:
         }
 
         auto multiplier = BigInt("1");
-        while ((multiplier * other) < (*this)) {
+        while ((multiplier.timesTen() * other) < (*this)) {
             multiplier.multiplyByTen();
         }
-        multiplier.divideByTen();
 
         auto result = BigInt("0");
         auto remaining = absoluteValue();
@@ -226,9 +230,13 @@ public:
         }
         if (_digits.size() == other._digits.size()) {
             if (_negative) {
-                return _digits.back() > other._digits.back();
+                return std::lexicographical_compare(
+                    _digits.rbegin(), _digits.rend(), 
+                    other._digits.rbegin(), other._digits.rend(), std::greater{});
             } else {
-                return _digits.back() < other._digits.back();
+                return std::lexicographical_compare(
+                    _digits.rbegin(), _digits.rend(), 
+                    other._digits.rbegin(), other._digits.rend());
             }
         }
 
@@ -273,6 +281,11 @@ public:
 };
 
 std::ostream& operator<<(std::ostream& os, const BigInt& value) {
+    if (value._digits.empty()) {
+        os << '0';
+        return os;
+    }
+    
     if (value._negative) {
         os << '-';
     }

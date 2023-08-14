@@ -20,11 +20,17 @@ class BigFloat {
             copy._mantissa.timesTenToThe(exponent - copy._exponent);
             copy._exponent = exponent;
             return copy;
-        } else /* copy._exponent > exponent */{
+        } else /* copy._exponent > exponent */ {
             copy._mantissa.timesTenToThe(copy._exponent - exponent);
             copy._exponent = exponent;
             return copy;
         }
+    }
+
+    BigFloat abs() const {
+        auto result = *this;
+        result._mantissa = result._mantissa.absoluteValue();
+        return result;
     }
 public:
     BigFloat(std::string_view value) : _mantissa("0"), _exponent(0) {
@@ -67,12 +73,12 @@ public:
     }
 
     BigFloat operator/(const BigFloat& other) const {
-        BigFloat one = usingExponent(-100);
-        BigFloat two = other;
+        auto one = *this;
+        auto two = other;
         BigFloat result;
         result._mantissa = one._mantissa / two._mantissa;
         result._exponent = one._exponent - two._exponent;
-        return result.usingExponent(-100);
+        return result.usingExponent(-50);
     }
 
     bool operator==(const BigFloat& other) const {
@@ -99,14 +105,38 @@ public:
         auto two = other.usingExponent(exponent);
         return one._mantissa > two._mantissa;
     }
+
+    void dump() const {
+        std::cout << " mantissa=" << _mantissa << " exponent=" << _exponent << std::endl;
+    }
 };
 
 std::ostream& operator<<(std::ostream& os, const BigFloat& value)
 {
+    if (value._mantissa == BigInt("0")) {
+        os << "0.0";
+        return os;
+    }
+
     std::ostringstream ss;
-    ss << value._mantissa;
+    ss << value._mantissa.absoluteValue();
     auto str = ss.str();
-    str.insert(str.end() + value._exponent + (value._mantissa > BigInt("0") ? 0 : -1), '.');
-    os << str;
+
+    if (value._exponent == 0) {
+        str += ".0";
+    } else if (value._exponent < 0) {
+        if (str.length() < size_t(std::abs(value._exponent))) {
+            const auto padding = std::string(std::abs(value._exponent) - str.length(), '0');
+            str = padding + str;
+        }
+        str.insert(str.end() + value._exponent, '.');
+    } else if (value._exponent > 0) {
+        for (auto i=0; i<value._exponent; ++i) {
+            str.push_back('0');
+        }
+        str += ".0";
+    }
+
+    os << ((value._mantissa >= BigInt("0")) ? "" : "-") << str;
     return os;
 }
