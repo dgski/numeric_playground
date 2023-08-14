@@ -28,13 +28,6 @@ class BigInt {
         return copy;
     }
 
-    // Get the absolute value of this number
-    BigInt absoluteValue() const {
-        auto copy = *this;
-        copy._negative = false;
-        return copy;
-    }
-
     // Helper to get the least significant digit from the digit span
     // and shrink the span to no longer include it
     static int consumeFrontDigit(std::string_view& value) {
@@ -269,6 +262,13 @@ public:
                 *this = *this * multiplier;
             }
         }
+    }
+
+    // Get the absolute value of this number
+    BigInt absoluteValue() const {
+        auto copy = *this;
+        copy._negative = false;
+        return copy;
     }
 };
 
