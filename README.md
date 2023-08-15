@@ -6,4 +6,8 @@ Working on various big number approaches in C++.
     - Provide direct mutation operations (rather than always creating an allocated a new object)
     - Include optional statically allocated buffer.
     - Small int optimization (If fits inside int64_t, just use that)
-    - Do not use base10; could be more efficient to use the full char or potentially even long long to store the digits. 
+    - Do not use base10; could be more efficient to use the full char or potentially even long long to store the digits.
+- [BigFloat](./BigFloat/BigFloat.hpp): A Simple BigFloat implementation using the `BitInt` class. Works in common case, but lots of necessary improvements:
+    - Support negative values
+    - Support positive exponents
+    - Proper precision setting
