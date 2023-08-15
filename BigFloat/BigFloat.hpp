@@ -73,8 +73,8 @@ public:
     }
 
     BigFloat operator/(const BigFloat& other) const {
-        auto one = *this;
-        auto two = other;
+        auto one = usingExponent(-50); // TODO: figure out precision
+        auto two = other.usingExponent(-10); // TODO: figure out precision
         BigFloat result;
         result._mantissa = one._mantissa / two._mantissa;
         result._exponent = one._exponent - two._exponent;

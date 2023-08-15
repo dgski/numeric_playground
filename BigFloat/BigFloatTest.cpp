@@ -1,8 +1,7 @@
 #include "BigFloat.hpp"
 
-/*
-auto squareRootBinarySearch(BigFloat x, BigFloat epsilon = BigFloat("0.00000001")) {
-    if (x < 0) {
+auto squareRootBinarySearch(BigFloat x, BigFloat epsilon = BigFloat("0.0000000001")) {
+    if (x < BigFloat("0.0")) {
         return BigFloat("-1.0");
     }
     
@@ -10,18 +9,17 @@ auto squareRootBinarySearch(BigFloat x, BigFloat epsilon = BigFloat("0.00000001"
     BigFloat right = x;
     BigFloat mid("0.0");
     
-    while (right - left > epsilon) {
+    while ((right - left) > epsilon) {
         mid = (left + right) / BigFloat("2.0");
-        if (mid * mid > x) {
+        if ((mid * mid) > x) {
             right = mid;
         } else {
             left = mid;
         }
     }
-    
+
     return left;
 }
-*/
 
 int main() {
     // printing
@@ -30,6 +28,15 @@ int main() {
     ss << printTestValue;
     if (ss.str() != "104242342123123234.2320") {
         std::cout << "printTestValue=" << printTestValue << std::endl;
+        assert(false);
+    }
+
+    // printing 2
+    BigFloat printTest2Value("0.0");
+    std::ostringstream ss2;
+    ss2 << printTest2Value;
+    if (ss2.str() != "0.0") {
+        std::cout << "printTest2Value=" << printTest2Value << std::endl;
         assert(false);
     }
 
@@ -54,6 +61,13 @@ int main() {
         assert(false);
     }
 
+    // subtraction 2
+    auto subtractionTest2Result = BigFloat("100.0") - BigFloat("200.0");
+    if (subtractionTest2Result != BigFloat("-100.0")) {
+        std::cout << "subtractionTest2Result" << subtractionTest2Result << std::endl;
+        assert(false);
+    }
+
     // multiplication
     auto multiplicationResult = BigFloat("123123431234124.343434234234") * BigFloat("0.5");
     if (multiplicationResult != BigFloat("61561715617062.1717171171170")) {
@@ -62,12 +76,14 @@ int main() {
     }
 
     // division
-    std::cout << "division" << std::endl;
-    auto divisionResult = BigFloat("10000000.0000000000000") / BigFloat("3.0000000000000");
-    if (divisionResult != BigFloat("3333333.333333333333333333333333333333333333333333333333333333333333333333333333333333333333333")) {
+    auto divisionResult = BigFloat("10000000.0") / BigFloat("3.0");
+    if (divisionResult != BigFloat("3333333.33333333333333333333333333333333333333330000000000")) {
         std::cout << "divisionResult=" << divisionResult << std::endl;
         assert(false);
     }
+
+    auto result = squareRootBinarySearch(BigFloat("42.0"));
+    std::cout << "sqrt(42)=" << result << std::endl;
 
     return 0;
 }
