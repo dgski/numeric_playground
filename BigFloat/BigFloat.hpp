@@ -42,43 +42,66 @@ public:
     }
 
     BigFloat operator+(const BigFloat& other) const {
+        auto copy = *this;
+        copy += other;
+        return copy;
+    }
+    BigFloat& operator+=(const BigFloat& other) {
         if (_exponent != other._exponent) {
             const auto exponent = std::min(_exponent, other._exponent);
-            return usingExponent(exponent) + other.usingExponent(exponent);
+            (*this) = usingExponent(exponent) + other.usingExponent(exponent);
+            return *this;
         }
-
-        BigFloat result;
+        static BigFloat result;
         result._mantissa = _mantissa + other._mantissa;
         result._exponent = _exponent;
-        return result;
+        std::swap(result, *this);
+        return *this;
     }
 
     BigFloat operator-(const BigFloat& other) const {
+        auto copy = *this;
+        copy -= other;
+        return copy;
+    }
+    BigFloat& operator-=(const BigFloat& other) {
         if (_exponent != other._exponent) {
             const auto exponent = std::min(_exponent, other._exponent);
-            return usingExponent(exponent) - other.usingExponent(exponent);
+            (*this) = usingExponent(exponent) - other.usingExponent(exponent);
+            return *this;
         }
 
-        BigFloat result;
+        static BigFloat result;
         result._mantissa = _mantissa - other._mantissa;
         result._exponent = _exponent;
-        return result;
+        std::swap(result, *this);
+        return *this;
     }
 
     BigFloat operator*(const BigFloat& other) const {
-        BigFloat result;
-        result._mantissa = _mantissa * other._mantissa;
-        result._exponent = _exponent + other._exponent;
-        return result;
+        auto copy = *this;
+        copy *= other;
+        return copy;
+    }
+    BigFloat& operator*=(const BigFloat& other) {
+        _mantissa = _mantissa * other._mantissa;
+        _exponent = _exponent + other._exponent;
+        return *this;
     }
 
     BigFloat operator/(const BigFloat& other) const {
+        auto copy = *this;
+        copy /= other;
+        return copy;
+    }
+    BigFloat& operator/=(const BigFloat& other) {
         auto one = usingExponent(-50); // TODO: figure out precision
         auto two = other.usingExponent(-10); // TODO: figure out precision
-        BigFloat result;
+        static BigFloat result;
         result._mantissa = one._mantissa / two._mantissa;
         result._exponent = one._exponent - two._exponent;
-        return result.usingExponent(-50);
+        std::swap(result, (*this));
+        return *this;
     }
 
     bool operator==(const BigFloat& other) const {
