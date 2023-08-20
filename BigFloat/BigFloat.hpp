@@ -13,18 +13,23 @@ class BigFloat {
 
     BigFloat usingExponent(int64_t exponent) const {
         auto copy = *this;
+        return copy.useExponent(exponent);
+    }
 
-        if (copy._exponent == exponent) {
-            return copy;
-        } else if (copy._exponent < exponent) {
-            copy._mantissa.timesTenToThe(exponent - copy._exponent);
-            copy._exponent = exponent;
-            return copy;
+    BigFloat& useExponent(int64_t exponent) {
+        if (_exponent == exponent) {
+            return *this;
+        } else if (_exponent < exponent) {
+            _mantissa.timesTenToThe(exponent - _exponent);
+            _exponent = exponent;
+            return *this;
         } else /* copy._exponent > exponent */ {
-            copy._mantissa.timesTenToThe(copy._exponent - exponent);
-            copy._exponent = exponent;
-            return copy;
+            _mantissa.timesTenToThe(_exponent - exponent);
+            _exponent = exponent;
+            return *this;
         }
+
+        return *this;
     }
 
     BigFloat abs() const {
@@ -49,7 +54,7 @@ public:
     BigFloat& operator+=(const BigFloat& other) {
         if (_exponent != other._exponent) {
             const auto exponent = std::min(_exponent, other._exponent);
-            (*this) = usingExponent(exponent) + other.usingExponent(exponent);
+            useExponent(exponent) += other.usingExponent(exponent);
             return *this;
         }
         static BigFloat result;
@@ -67,7 +72,7 @@ public:
     BigFloat& operator-=(const BigFloat& other) {
         if (_exponent != other._exponent) {
             const auto exponent = std::min(_exponent, other._exponent);
-            (*this) = usingExponent(exponent) - other.usingExponent(exponent);
+            useExponent(exponent) -= other.usingExponent(exponent);
             return *this;
         }
 
@@ -95,12 +100,10 @@ public:
         return copy;
     }
     BigFloat& operator/=(const BigFloat& other) {
-        auto one = usingExponent(-50); // TODO: figure out precision
+        useExponent(-50); // TODO: figure out precision
         auto two = other.usingExponent(-10); // TODO: figure out precision
-        static BigFloat result;
-        result._mantissa = one._mantissa / two._mantissa;
-        result._exponent = one._exponent - two._exponent;
-        std::swap(result, (*this));
+        _mantissa = _mantissa / two._mantissa;
+        _exponent = _exponent - two._exponent;
         return *this;
     }
 
