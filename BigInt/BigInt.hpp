@@ -18,12 +18,6 @@ class BigInt {
     BigInt() {}
 
     // Primitive operations used internally 
-    void multiplyByTen() { _digits = char(0) + _digits; }
-    BigInt timesTen() {
-        auto result = *this;
-        result.multiplyByTen();
-        return result;
-    }
     void divideByTen() { _digits.erase(_digits.begin()); }
 
     //  Cet the opposite signed number
@@ -64,9 +58,20 @@ public:
         }
     }
 
-    BigInt(int64_t value) : BigInt(std::to_string(value)) {}
+    BigInt(int64_t value) : BigInt() {
+        assign(value);
+    }
     void assign(int64_t value) {
-        assign(std::to_string(value));
+        _digits.clear();
+        if (value < 0) {
+            _negative = true;
+        }
+        value = std::abs(value);
+        while(value) {
+            auto nextChar = char(value % 10);
+            _digits.push_back(nextChar);
+            value /= 10;
+        }
     }
 
     BigInt operator+(const BigInt& other) const {
