@@ -46,6 +46,9 @@ class BigInt {
 public:
     // Construct a new object by providing a string implementation
     BigInt(std::string_view value) {
+        assign(value);
+    }
+    void assign(std::string_view value) {
         if (value.front() == '-') {
             _negative = true;
             value.remove_prefix(1);
@@ -62,6 +65,9 @@ public:
     }
 
     BigInt(int64_t value) : BigInt(std::to_string(value)) {}
+    void assign(int64_t value) {
+        assign(std::to_string(value));
+    }
 
     BigInt operator+(const BigInt& other) const {
         auto copy = *this;
@@ -180,10 +186,13 @@ public:
         // Multiple other by first digit
         auto currentDigitResult = BigInt("0");
         const auto currentDigit = _digits.front();
-        auto multiplier = BigInt("1");
+        auto temp = BigInt("0");
+        auto exponent = 0;
         for (auto digit : other._digits) {
-            currentDigitResult += (multiplier * (BigInt(currentDigit * digit)));
-            multiplier.multiplyByTen();
+            temp.assign(currentDigit * digit);
+            temp.timesTenToThe(exponent);
+            currentDigitResult += temp;
+            exponent += 1;
         }
 
         // Add result and recurse
