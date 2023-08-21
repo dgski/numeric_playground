@@ -5,13 +5,13 @@ auto squareRootBinarySearch(BigFloat x) {
         return BigFloat("-1.0");
     }
 
-    BigFloat::setGlobalPrecision(100);
+    BigFloat::setGlobalPrecision(160);
     
     BigFloat left("0.0");
     BigFloat right = x;
     BigFloat mid("0.0");
     const BigFloat two("2.0");
-    
+
     while ((right - left) > BigFloat::epsilon()) {
         mid = (left + right);
         mid /= two;
