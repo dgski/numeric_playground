@@ -282,12 +282,11 @@ public:
     void timesTenToThe(int exponent) {
         const bool divide = exponent < 0;
 
-        static auto multiplier = BigInt("10");
         for (int i=0; i<std::abs(exponent); ++i) {
             if (divide) {
-                *this = *this / multiplier;
+                divideByTen();
             } else {
-                *this = *this * multiplier;
+                multiplyByTen();
             }
         }
     }
