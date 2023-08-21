@@ -162,12 +162,19 @@ public:
     }
 
     BigInt operator*(const BigInt& other) const {
+        auto copy = *this;
+        copy *= other;
+        return copy;
+    }
+    BigInt& operator*=(const BigInt& other) {
         if (*this == BigInt("0") || other == BigInt("0") || _digits.empty() || other._digits.empty()) {
-            return BigInt("0");
+            *this = BigInt("0");
+            return *this;
         }
 
         if (*this == BigInt("1")) {
-            return other;
+            *this = other;
+            return *this;
         }
 
         if (other == BigInt("1")) {
@@ -175,17 +182,21 @@ public:
         }
 
         if (_negative && other._negative) {
-            return oppositelySigned() * other.oppositelySigned();
+            _negative = !_negative;
+            *this *= other.oppositelySigned();
+            return *this;
         }
         if (_negative != other._negative) {
-            auto result = absoluteValue() * other.absoluteValue();
-            result._negative = true;
-            return result;
+            _negative = false;
+            *this *= other.absoluteValue();
+            _negative = true;
+            return *this;
         }
 
-        auto result = BigInt("0");
-        auto temp = BigInt("0");
-        auto currentDigitResult = BigInt("0");
+        static auto result = BigInt("0");
+        result.assign("0");
+        static auto temp = BigInt("0");
+        static auto currentDigitResult = BigInt("0");
         auto place = 0;
         for (auto currentDigit : _digits) {
             // get the current digit * other
@@ -204,7 +215,8 @@ public:
             place += 1;
         }
 
-        return result;
+        std::swap(*this, result);
+        return *this;
     }
 
     BigInt operator/(const BigInt& other) const {
@@ -225,14 +237,14 @@ public:
         }
 
         auto remaining = absoluteValue();
-
         auto multiplier = BigInt("1");
         auto finalResult = BigInt("0");
         auto result = BigInt("0");
+        auto chunkToSubtract = BigInt("0");
         while (true) {
             // Find how much to subtract at a time
             auto exponent = _digits.size();
-            auto chunkToSubtract = other;
+            chunkToSubtract = other;
             chunkToSubtract.timesTenToThe(exponent);
             while (chunkToSubtract > remaining) {
                 exponent -= 1;
@@ -248,7 +260,6 @@ public:
                 remaining -= chunkToSubtract;
             }
 
-
             if (!(_negative && other._negative) && (_negative || other._negative)) {
                 result._negative = true;
             }
@@ -258,7 +269,6 @@ public:
             if ((remaining < other) || multiplier == BigInt("1")) {
                 break;
             }
-
         }
 
         return finalResult;
