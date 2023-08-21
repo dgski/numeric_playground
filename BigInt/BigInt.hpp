@@ -223,18 +223,17 @@ public:
         }
 
         auto exponent = _digits.size();
-        auto otherMultiplied = other;
-        otherMultiplied.timesTenToThe(exponent);
-        while (otherMultiplied > (*this)) {
+        auto chunkToSubtract = other;
+        chunkToSubtract.timesTenToThe(exponent);
+        while (chunkToSubtract > (*this)) {
             exponent -= 1;
-            otherMultiplied.divideByTen();
+            chunkToSubtract.divideByTen();
         }
 
         auto multiplier = BigInt("1");
         multiplier.timesTenToThe(exponent);
         auto result = BigInt("0");
         auto remaining = absoluteValue();
-        auto chunkToSubtract = other * multiplier;
         while (remaining >= chunkToSubtract) {
             result += multiplier;
             remaining -= chunkToSubtract;
