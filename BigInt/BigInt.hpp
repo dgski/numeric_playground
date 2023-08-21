@@ -280,14 +280,12 @@ public:
     }
 
     void timesTenToThe(int exponent) {
-        const bool divide = exponent < 0;
-
-        for (int i=0; i<std::abs(exponent); ++i) {
-            if (divide) {
-                divideByTen();
-            } else {
-                multiplyByTen();
+        if (const bool divide = exponent < 0; divide) {
+            if (size_t(std::abs(exponent)) <= _digits.size()) {
+                _digits.erase(_digits.begin(), std::next(_digits.begin(), std::abs(exponent)));
             }
+        } else {
+            _digits = std::string(std::abs(exponent), char(0)) + _digits;
         }
     }
 
