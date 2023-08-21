@@ -183,26 +183,28 @@ public:
             return result;
         }
 
-        // Multiple other by first digit
-        auto currentDigitResult = BigInt("0");
-        const auto currentDigit = _digits.front();
+        auto result = BigInt("0");
         auto temp = BigInt("0");
-        auto exponent = 0;
-        for (auto digit : other._digits) {
-            temp.assign(currentDigit * digit);
-            temp.timesTenToThe(exponent);
-            currentDigitResult += temp;
-            exponent += 1;
+        auto currentDigitResult = BigInt("0");
+        auto place = 0;
+        for (auto currentDigit : _digits) {
+            // get the current digit * other
+            currentDigitResult.assign("0");
+            auto exponent = 0;
+            for (auto digit : other._digits) {
+                temp.assign(currentDigit * digit);
+                temp.timesTenToThe(exponent);
+                currentDigitResult += temp;
+                exponent += 1;
+            }
+
+            // Add it to the final result
+            currentDigitResult.timesTenToThe(place);
+            result += currentDigitResult;
+            place += 1;
         }
 
-        // Add result and recurse
-        auto next = *this;
-        next.divideByTen();
-
-        auto nextValue = (next * other);
-        nextValue.multiplyByTen();
-
-        return currentDigitResult + nextValue;
+        return result;
     }
 
     BigInt operator/(const BigInt& other) const {
@@ -222,32 +224,44 @@ public:
             return result;
         }
 
-        auto exponent = _digits.size();
-        auto chunkToSubtract = other;
-        chunkToSubtract.timesTenToThe(exponent);
-        while (chunkToSubtract > (*this)) {
-            exponent -= 1;
-            chunkToSubtract.divideByTen();
-        }
+        auto remaining = absoluteValue();
 
         auto multiplier = BigInt("1");
-        multiplier.timesTenToThe(exponent);
+        auto finalResult = BigInt("0");
         auto result = BigInt("0");
-        auto remaining = absoluteValue();
-        while (remaining >= chunkToSubtract) {
-            result += multiplier;
-            remaining -= chunkToSubtract;
+        while (true) {
+            // Find how much to subtract at a time
+            auto exponent = _digits.size();
+            auto chunkToSubtract = other;
+            chunkToSubtract.timesTenToThe(exponent);
+            while (chunkToSubtract > remaining) {
+                exponent -= 1;
+                chunkToSubtract.divideByTen();
+            }
+
+            // Count how many subtractions in this cycle
+            multiplier.assign("1");
+            multiplier.timesTenToThe(exponent);
+            result.assign("0");
+            while (remaining >= chunkToSubtract) {
+                result += multiplier;
+                remaining -= chunkToSubtract;
+            }
+
+
+            if (!(_negative && other._negative) && (_negative || other._negative)) {
+                result._negative = true;
+            }
+
+            finalResult += result;
+
+            if ((remaining < other) || multiplier == BigInt("1")) {
+                break;
+            }
+
         }
 
-        if (!(_negative && other._negative) && (_negative || other._negative)) {
-            result._negative = true;
-        }
-
-        if ((remaining < other) || multiplier == BigInt("1")) {
-            return result;
-        }
-
-        return result + (remaining / other);
+        return finalResult;
     }
 
     bool operator==(const BigInt& other) const {
