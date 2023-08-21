@@ -220,27 +220,46 @@ public:
     }
 
     BigInt operator/(const BigInt& other) const {
+        auto copy = *this;
+        copy /= other;
+        return copy;
+    }
+    BigInt& operator/=(const BigInt& other) {
         if (other == BigInt("0")) {
             throw std::runtime_error("Dividing by zero");
         }
         if (*this == BigInt("0")) {
-            return BigInt("0");
+            *this = BigInt("0");
+            return *this;
         }
 
         if (_negative && other._negative) {
-            return oppositelySigned() / other.oppositelySigned();
+            _negative = !_negative;
+            *this /= other.oppositelySigned();
+            return *this;
         }
         if (_negative != other._negative) {
-            auto result = absoluteValue() / other.absoluteValue();
-            result._negative = true;
-            return result;
+            _negative = false;
+            *this /= other.absoluteValue();
+            _negative = true;
+            return *this;
         }
 
-        auto remaining = absoluteValue();
-        auto multiplier = BigInt("1");
-        auto finalResult = BigInt("0");
-        auto result = BigInt("0");
-        auto chunkToSubtract = BigInt("0");
+        static auto remaining = BigInt("0");
+        remaining = absoluteValue();
+
+        static auto multiplier = BigInt("0");
+        multiplier.assign("1");
+
+        static auto finalResult = BigInt("0");
+        finalResult.assign("0");
+
+        static auto result = BigInt("0");
+        result.assign("0");
+
+        static auto chunkToSubtract = BigInt("0");
+        chunkToSubtract.assign("0");
+
         while (true) {
             // Find how much to subtract at a time
             auto exponent = _digits.size();
@@ -271,7 +290,8 @@ public:
             }
         }
 
-        return finalResult;
+        std::swap(*this, finalResult);
+        return *this;
     }
 
     bool operator==(const BigInt& other) const {
