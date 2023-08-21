@@ -9,6 +9,8 @@ class BigFloat {
     BigInt _mantissa;
     int64_t _exponent;
 
+    static int64_t _precision;
+
     BigFloat() : _mantissa("0"), _exponent(0) {}
 
     BigFloat usingExponent(int64_t exponent) const {
@@ -93,10 +95,10 @@ public:
         return copy;
     }
     BigFloat& operator/=(const BigFloat& other) {
-        useExponent(-50); // TODO: figure out precision
-        auto two = other.usingExponent(-10); // TODO: figure out precision
-        _mantissa = _mantissa / two._mantissa;
-        _exponent = _exponent - two._exponent;
+        //std::cout << "_exponent=" << _exponent << " other._exponent=" << other._exponent << std::endl;
+        useExponent(other._exponent - _precision); // TODO: figure out precision
+        _mantissa = _mantissa / other._mantissa;
+        _exponent = _exponent - other._exponent;
         return *this;
     }
 
@@ -127,6 +129,16 @@ public:
 
     void dump() const {
         std::cout << " mantissa=" << _mantissa << " exponent=" << _exponent << std::endl;
+    }
+
+    static void setGlobalPrecision(int64_t settingPrecision) {
+        _precision = settingPrecision;
+    }
+
+    static BigFloat epsilon() {
+        std::string str = "0." + std::string(_precision-1, '0') + '1';
+        return BigFloat(str);
+
     }
 };
 
@@ -159,3 +171,5 @@ std::ostream& operator<<(std::ostream& os, const BigFloat& value)
     os << ((value._mantissa >= BigInt("0")) ? "" : "-") << str;
     return os;
 }
+
+int64_t BigFloat::_precision = 100;
