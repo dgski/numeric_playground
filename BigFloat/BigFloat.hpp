@@ -57,10 +57,7 @@ public:
             useExponent(exponent) += other.usingExponent(exponent);
             return *this;
         }
-        static BigFloat result;
-        result._mantissa = _mantissa + other._mantissa;
-        result._exponent = _exponent;
-        std::swap(result, *this);
+        _mantissa += other._mantissa;
         return *this;
     }
 
@@ -75,11 +72,7 @@ public:
             useExponent(exponent) -= other.usingExponent(exponent);
             return *this;
         }
-
-        static BigFloat result;
-        result._mantissa = _mantissa - other._mantissa;
-        result._exponent = _exponent;
-        std::swap(result, *this);
+        _mantissa -=  other._mantissa;
         return *this;
     }
 

@@ -197,7 +197,7 @@ public:
 
         // Add result and recurse
         auto next = *this;
-        next._digits.erase(next._digits.begin());
+        next.divideByTen();
 
         auto nextValue = (next * other);
         nextValue.multiplyByTen();
@@ -222,11 +222,16 @@ public:
             return result;
         }
 
-        auto multiplier = BigInt("1");
-        while ((multiplier.timesTen() * other) < (*this)) {
-            multiplier.multiplyByTen();
+        auto exponent = _digits.size();
+        auto otherMultiplied = other;
+        otherMultiplied.timesTenToThe(exponent);
+        while (otherMultiplied > (*this)) {
+            exponent -= 1;
+            otherMultiplied.divideByTen();
         }
 
+        auto multiplier = BigInt("1");
+        multiplier.timesTenToThe(exponent);
         auto result = BigInt("0");
         auto remaining = absoluteValue();
         auto chunkToSubtract = other * multiplier;
