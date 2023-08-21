@@ -85,7 +85,7 @@ public:
     }
     BigFloat& operator*=(const BigFloat& other) {
         _mantissa *= other._mantissa;
-        _exponent = _exponent + other._exponent;
+        _exponent += other._exponent;
         return *this;
     }
 
@@ -95,10 +95,9 @@ public:
         return copy;
     }
     BigFloat& operator/=(const BigFloat& other) {
-        //std::cout << "_exponent=" << _exponent << " other._exponent=" << other._exponent << std::endl;
-        useExponent(other._exponent - _precision); // TODO: figure out precision
-        _mantissa = _mantissa / other._mantissa;
-        _exponent = _exponent - other._exponent;
+        useExponent(other._exponent - _precision);
+        _mantissa /= other._mantissa;
+        _exponent -= other._exponent;
         return *this;
     }
 

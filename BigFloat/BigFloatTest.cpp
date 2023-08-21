@@ -5,7 +5,7 @@ auto squareRootBinarySearch(BigFloat x) {
         return BigFloat("-1.0");
     }
 
-    BigFloat::setGlobalPrecision(150);
+    BigFloat::setGlobalPrecision(100);
     
     BigFloat left("0.0");
     BigFloat right = x;
