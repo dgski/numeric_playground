@@ -72,7 +72,7 @@ public:
             useExponent(exponent) -= other.usingExponent(exponent);
             return *this;
         }
-        _mantissa -=  other._mantissa;
+        _mantissa -= other._mantissa;
         return *this;
     }
 
