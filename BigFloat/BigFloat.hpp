@@ -84,7 +84,7 @@ public:
         return copy;
     }
     BigFloat& operator*=(const BigFloat& other) {
-        _mantissa = _mantissa * other._mantissa;
+        _mantissa *= other._mantissa;
         _exponent = _exponent + other._exponent;
         return *this;
     }
