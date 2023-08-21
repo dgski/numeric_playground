@@ -64,14 +64,22 @@ public:
     BigInt(int64_t value) : BigInt(std::to_string(value)) {}
 
     BigInt operator+(const BigInt& other) const {
+        auto copy = *this;
+        copy += other;
+        return copy;
+    }
+    BigInt& operator+=(const BigInt& other) {
         if (_negative && !other._negative) {
-            return other - (*this).oppositelySigned();
+            (*this) = other - (*this).oppositelySigned();
+            return *this;
         }
         if (!_negative && other._negative) {
-            return (*this) - other.oppositelySigned();
+            (*this) -= other.oppositelySigned();
+            return *this;
         }
 
-        BigInt result;
+        static BigInt result;
+        result._digits.clear();
         result._negative = _negative;
         int carry = 0;
 
@@ -90,12 +98,19 @@ public:
             result._digits.push_back(carry);
         }
 
-        return result;
+        std::swap(result, *this);
+        return *this;
     }
 
     BigInt operator-(const BigInt& other) const {
+        auto copy = *this;
+        copy -= other;
+        return copy;
+    }
+    BigInt& operator-=(const BigInt& other) {
         if (*this == other) {
-            return BigInt("0");
+            *this = BigInt("0");
+            return *this;
         }
 
         const bool signFlip =
@@ -103,16 +118,19 @@ public:
             ((_negative && (*this > other)) ||
             (!_negative && (*this < other)));
         if (signFlip) {
-            return (other - *this).oppositelySigned();
+            *this = (other - *this).oppositelySigned();
+            return *this;
         }
 
         // Subtracting Negative From Positive or Subtracting Positive From Negative
         if (_negative != other._negative) {
-            return (*this) + other.oppositelySigned();
+            *this += other.oppositelySigned();
+            return *this;
         }
 
         // Subtracting smaller number of same sign:
-        BigInt result;
+        static BigInt result;
+        result._digits.clear();
         result._negative = _negative;
         int borrow = 0;
 
@@ -132,7 +150,9 @@ public:
             result._digits.pop_back();
         }
 
-        return result;
+        std::swap(result, *this);
+
+        return *this;
     }
 
     BigInt operator*(const BigInt& other) const {
@@ -162,7 +182,7 @@ public:
         const auto currentDigit = _digits.front();
         auto multiplier = BigInt("1");
         for (auto digit : other._digits) {
-            currentDigitResult = currentDigitResult + (multiplier * (BigInt(currentDigit * digit)));
+            currentDigitResult += (multiplier * (BigInt(currentDigit * digit)));
             multiplier.multiplyByTen();
         }
 
@@ -202,8 +222,8 @@ public:
         auto remaining = absoluteValue();
         auto chunkToSubtract = other * multiplier;
         while (remaining >= chunkToSubtract) {
-            result = result + multiplier;
-            remaining = remaining - chunkToSubtract;
+            result += multiplier;
+            remaining -= chunkToSubtract;
         }
 
         if (!(_negative && other._negative) && (_negative || other._negative)) {
@@ -262,7 +282,7 @@ public:
     void timesTenToThe(int exponent) {
         const bool divide = exponent < 0;
 
-        auto multiplier = BigInt("10");
+        static auto multiplier = BigInt("10");
         for (int i=0; i<std::abs(exponent); ++i) {
             if (divide) {
                 *this = *this / multiplier;
