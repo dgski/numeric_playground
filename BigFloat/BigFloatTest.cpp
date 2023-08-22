@@ -5,7 +5,7 @@ auto squareRootBinarySearch(BigFloat x) {
         return BigFloat("-1.0");
     }
 
-    BigFloat::setGlobalPrecision(200);
+    BigFloat::setGlobalPrecision(40);
     
     BigFloat left("0.0");
     BigFloat right = x;
@@ -81,11 +81,11 @@ int main() {
     }
 
     // division
-    //auto divisionResult = BigFloat("10000000.0") / BigFloat("3.0");
-    //if (divisionResult != BigFloat("3333333.33333333333333333333333333333333333333330000000000")) {
-    //    std::cout << "divisionResult=" << divisionResult << std::endl;
-    //    assert(false);
-    //}
+    auto divisionResult = BigFloat("10000000.0") / BigFloat("3.0");
+    if (divisionResult != BigFloat("3333333.3333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333")) {
+        std::cout << "divisionResult=" << divisionResult << std::endl;
+        assert(false);
+    }
 
     auto result = squareRootBinarySearch(BigFloat("42.0"));
     std::cout << "sqrt(42)=" << result << std::endl;

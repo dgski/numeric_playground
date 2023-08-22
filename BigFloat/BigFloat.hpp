@@ -137,7 +137,6 @@ public:
     static BigFloat epsilon() {
         std::string str = "0." + std::string(_precision-1, '0') + '1';
         return BigFloat(str);
-
     }
 };
 
