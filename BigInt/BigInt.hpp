@@ -3,6 +3,7 @@
 #include <string_view>
 #include <iostream>
 #include <algorithm>
+#include <cassert>
 
 // Simple implementation of theoretically unlimited-width integers
 class BigInt {
