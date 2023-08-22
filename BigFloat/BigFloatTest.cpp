@@ -5,7 +5,7 @@ auto squareRootBinarySearch(BigFloat x) {
         return BigFloat("-1.0");
     }
 
-    BigFloat::setGlobalPrecision(160);
+    BigFloat::setGlobalPrecision(200);
     
     BigFloat left("0.0");
     BigFloat right = x;
@@ -13,7 +13,8 @@ auto squareRootBinarySearch(BigFloat x) {
     const BigFloat two("2.0");
 
     while ((right - left) > BigFloat::epsilon()) {
-        mid = (left + right);
+        mid = std::move(left);
+        mid += right;
         mid /= two;
         if ((mid * mid) > x) {
             right = std::move(mid);
