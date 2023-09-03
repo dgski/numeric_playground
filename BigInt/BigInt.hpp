@@ -5,372 +5,233 @@
 #include <algorithm>
 #include <cassert>
 
-// Simple implementation of theoretically unlimited-width integers
-class BigInt {
-    friend std::ostream& operator<<(std::ostream& os, const BigInt& value);
+// Simple BigInt class that only supports positive integers
+class UnsignedBigInt {
+public:
+    using DigitType = int32_t;
+    using DigitString = std::basic_string<DigitType>;
+    using DigitStringView = std::basic_string_view<DigitType>;
+private:
+    static constexpr DigitType BASE = 10;
 
-    // Marks whether the number is negative
-    bool _negative = false;
-    
-    // Base-10 digits starting from least significant
-    std::string _digits;
+    // Digits of base-10 integer stored in human readable order
+    DigitString _digits;
 
-    // Used internally to construct new objects (invalid starting state)
-    BigInt() {}
-
-    // Primitive operations used internally 
-    void divideByTen() { _digits.erase(_digits.begin()); }
-
-    //  Cet the opposite signed number
-    BigInt oppositelySigned() const {
-        auto copy = *this;
-        copy._negative = !copy._negative;
-        return copy;
-    }
-
-    // Helper to get the least significant digit from the digit span
-    // and shrink the span to no longer include it
-    static int consumeFrontDigit(std::string_view& value) {
+    // Helper function to consume the least significant digit
+    static DigitType consumeNextDigit(DigitStringView& value) {
         if (value.empty()) {
             return 0;
         }
-        const auto result = value.front();
-        value.remove_prefix(1);
-        return int(result);
+        const auto result = value.back();
+        value.remove_suffix(1);
+        return result;
     };
-public:
-    // Construct a new object by providing a string implementation
-    BigInt(std::string_view value) {
-        assign(value);
-    }
-    void assign(std::string_view value) {
-        if (value.front() == '-') {
-            _negative = true;
-            value.remove_prefix(1);
+
+    // Division/Remainder operation implemented using iterative subtraction chunks
+    // Each iteration sizes the chunk to be largest possible but still smaller than remainder
+    static std::pair<UnsignedBigInt, UnsignedBigInt> divModChunked(
+        const UnsignedBigInt& dividend,
+        const UnsignedBigInt& divisor)
+    {
+        if (dividend < divisor) {
+            return { UnsignedBigInt("0"), dividend };
         }
 
-        while((value.size() > 1) && value.front() == '0') {
-            value.remove_prefix(1);
-        }
-        _digits.resize(value.size());
+        auto quotient = UnsignedBigInt("0");
+        auto remainder = dividend;
+        auto multiplier = UnsignedBigInt("1");
+        auto chunk = divisor;
+        const auto initialChunkMultiplier = remainder._digits.size() - divisor._digits.size();
+        multiplier.timesBaseToThe(initialChunkMultiplier);
+        chunk.timesBaseToThe(initialChunkMultiplier);
 
-        for (size_t i=0; i<value.size(); ++i) {
-            _digits[_digits.size()-i-1] = value[i] - '0';
-        }
-    }
+        // Continue until remainder is smaller than divisor
+        while (divisor <= remainder) {
+            // Find next chunk size
+            while (chunk > remainder) {
+                multiplier.divideByTen();
+                chunk.divideByTen();
+            }
 
-    BigInt(int64_t value) : BigInt() {
-        assign(value);
-    }
-    void assign(int64_t value) {
-        _digits.clear();
-        if (value < 0) {
-            _negative = true;
-        }
-        value = std::abs(value);
-        while(value) {
-            auto nextChar = char(value % 10);
-            _digits.push_back(nextChar);
-            value /= 10;
-        }
-    }
-
-    BigInt operator+(const BigInt& other) const {
-        auto copy = *this;
-        copy += other;
-        return copy;
-    }
-    BigInt& operator+=(const BigInt& other) {
-        if (_negative && !other._negative) {
-            (*this) = other - (*this).oppositelySigned();
-            return *this;
-        }
-        if (!_negative && other._negative) {
-            (*this) -= other.oppositelySigned();
-            return *this;
-        }
-
-        static BigInt result;
-        result._digits.clear();
-        result._negative = _negative;
-        int carry = 0;
-
-        std::string_view one(_digits), two(other._digits);
-        while (!one.empty() || !two.empty()) {
-            const int nextDigit = consumeFrontDigit(one) + consumeFrontDigit(two) + carry;
-            if (nextDigit <= 9) {
-                result._digits.push_back(nextDigit);
-                carry = 0;
-            } else {
-                result._digits.push_back(nextDigit % 10);
-                carry = 1;
+            // Find how many chunks fit into remainder and therefore how many 'divisors's
+            while (remainder >= chunk) {
+                remainder = remainder - chunk;
+                quotient = quotient + multiplier;
             }
         }
-        if (carry) {
-            result._digits.push_back(carry);
-        }
 
-        std::swap(result, *this);
-        return *this;
+        return { quotient, remainder };
     }
 
-    BigInt operator-(const BigInt& other) const {
-        auto copy = *this;
-        copy -= other;
-        return copy;
+    // Division and remainder implemented using 'grade-school' long division
+    static std::pair<UnsignedBigInt, UnsignedBigInt> divModLong(
+        const UnsignedBigInt& dividend,
+        const UnsignedBigInt& divisor)
+    {
+        if (dividend < divisor) {
+            return { UnsignedBigInt("0"), dividend };
+        }
+
+        // Still digits left to process
+        auto dividendDigitsAreLeft = [&](auto currentIndex) {
+            return size_t(currentIndex) != dividend._digits.size();
+        };
+
+        // Put next reasonable segment to divide by divisor into remainder, update the currentIndex of the dividends digits
+        // and return the number of digits in the next segment (front-padded zeros included)
+        auto prepareNextDividendSegment = [&](auto& remainder, auto& currentIndex) {
+            auto segmentWidth = 0;
+            while (dividendDigitsAreLeft(currentIndex) && (remainder < divisor)) {
+                if (remainder == UnsignedBigInt("0")) {
+                    remainder._digits = { dividend._digits[currentIndex] };
+                } else {
+                    remainder._digits.push_back(dividend._digits[currentIndex]);
+                }
+                ++segmentWidth;
+                ++currentIndex;
+            }
+            return segmentWidth;
+        };
+
+        auto quotientString = DigitString{};
+        auto remainder = UnsignedBigInt("0");
+        auto currentIndex = 0;
+        while (dividendDigitsAreLeft(currentIndex)) {
+            const auto segmentWidth = prepareNextDividendSegment(remainder, currentIndex);
+            const auto [segmentQuotient, segmentRemainder] = divModChunked(remainder, divisor);
+            remainder = segmentRemainder;
+            const auto frontZeroPaddingLength = segmentWidth - segmentQuotient._digits.size();
+            quotientString.insert(quotientString.end(), frontZeroPaddingLength, 0);
+            quotientString += segmentQuotient._digits;
+        }
+
+        return { fromIntString(std::move(quotientString)), remainder };
     }
-    BigInt& operator-=(const BigInt& other) {
-        if (*this == other) {
-            *this = BigInt("0");
-            return *this;
+
+    // Constructor for internal building of new objects
+    UnsignedBigInt() {}
+public:
+    // Create a new BigInt from a string representation
+    explicit UnsignedBigInt(std::string_view value) {
+        _digits.reserve(value.size());
+        for (auto v : value) {
+            _digits.push_back(v - '0');
         }
+    }
 
-        const bool signFlip =
-            (_negative == other._negative) &&
-            ((_negative && (*this > other)) ||
-            (!_negative && (*this < other)));
-        if (signFlip) {
-            *this = (other - *this).oppositelySigned();
-            return *this;
+    // Utility function to build new objects more efficiently
+    static UnsignedBigInt fromIntString(DigitString value) {
+        UnsignedBigInt result;
+        result._digits = std::move(value);
+
+        // Remove leading zeros
+        auto it = std::find_if_not(result._digits.begin(), result._digits.end(), [](auto c) { return c == 0; });
+        if (it != result._digits.begin()) {
+            result._digits.erase(result._digits.begin(), it);
         }
-
-        // Subtracting Negative From Positive or Subtracting Positive From Negative
-        if (_negative != other._negative) {
-            *this += other.oppositelySigned();
-            return *this;
-        }
-
-        // Subtracting smaller number of same sign:
-        static BigInt result;
-        result._digits.clear();
-        result._negative = _negative;
-        int borrow = 0;
-
-        std::string_view one(_digits), two(other._digits);
+        return result;
+    }
+    
+    // Arithmetic Operators
+    UnsignedBigInt operator+(const UnsignedBigInt& other) const {
+        DigitString result;
+        result.reserve(std::max(_digits.size(),  other._digits.size()));
+        DigitType carry = 0;
+        DigitStringView one(_digits), two(other._digits);
         while (!one.empty() || !two.empty()) {
-            int nextDigit = consumeFrontDigit(one) - consumeFrontDigit(two) - borrow;
+            const auto nextDigit = consumeNextDigit(one) + consumeNextDigit(two) + carry;
+            result.push_back(nextDigit % BASE);
+            carry = nextDigit / BASE;
+        }
+        if (carry) {
+            result.push_back(1);
+        }
+        std::reverse(result.begin(), result.end());
+        return fromIntString(std::move(result));
+    }
+    UnsignedBigInt operator-(const UnsignedBigInt& other) const {
+        DigitString result;
+        DigitType borrow = 0;
+        DigitStringView one(_digits), two(other._digits);
+        while (!one.empty() || !two.empty()) {
+            auto nextDigit = consumeNextDigit(one) - consumeNextDigit(two) - borrow;
             if (nextDigit < 0) {
-                nextDigit += 10;
+                nextDigit += BASE;
                 borrow = 1;
             } else {
                 borrow = 0;
             }
-            result._digits.push_back(nextDigit);
+            result.push_back(nextDigit);
         }
-
-        while (result._digits.back() == 0) {
-            result._digits.pop_back();
+        // Remove leading zeros
+        while (!result.empty() && result.back() == 0) {
+            result.pop_back();
         }
-
-        std::swap(result, *this);
-
-        return *this;
+        if (result.empty()) {
+            return UnsignedBigInt("0");
+        };
+        std::reverse(result.begin(), result.end());
+        return fromIntString(std::move(result));
     }
+    UnsignedBigInt operator*(const UnsignedBigInt& other) const {
+        const int64_t oneSize = _digits.size();
+        const int64_t twoSize = other._digits.size();
+        DigitString result(oneSize + twoSize, 0);
 
-    BigInt operator*(const BigInt& other) const {
-        auto copy = *this;
-        copy *= other;
-        return copy;
-    }
-    BigInt& operator*=(const BigInt& other) {
-        if (*this == BigInt("0") || other == BigInt("0") || _digits.empty() || other._digits.empty()) {
-            *this = BigInt("0");
-            return *this;
-        }
-
-        if (*this == BigInt("1")) {
-            *this = other;
-            return *this;
-        }
-
-        if (other == BigInt("1")) {
-            return *this;
-        }
-
-        if (_negative && other._negative) {
-            _negative = !_negative;
-            *this *= other.oppositelySigned();
-            return *this;
-        }
-        if (_negative != other._negative) {
-            _negative = false;
-            *this *= other.absoluteValue();
-            _negative = true;
-            return *this;
-        }
-
-        static auto result = BigInt("0");
-        result.assign("0");
-        static auto temp = BigInt("0");
-        static auto currentDigitResult = BigInt("0");
-        auto place = 0;
-        for (auto currentDigit : _digits) {
-            // get the current digit * other
-            currentDigitResult.assign("0");
-            auto exponent = 0;
-            for (auto digit : other._digits) {
-                temp.assign(currentDigit * digit);
-                temp.timesTenToThe(exponent);
-                currentDigitResult += temp;
-                exponent += 1;
-            }
-
-            // Add it to the final result
-            currentDigitResult.timesTenToThe(place);
-            result += currentDigitResult;
-            place += 1;
-        }
-
-        std::swap(*this, result);
-        return *this;
-    }
-
-    BigInt operator/(const BigInt& other) const {
-        auto copy = *this;
-        copy /= other;
-        return copy;
-    }
-    BigInt& operator/=(const BigInt& other) {
-        if (other == BigInt("0")) {
-            throw std::runtime_error("Dividing by zero");
-        }
-        if (*this == BigInt("0")) {
-            *this = BigInt("0");
-            return *this;
-        }
-
-        if (_negative && other._negative) {
-            _negative = !_negative;
-            *this /= other.oppositelySigned();
-            return *this;
-        }
-        if (_negative != other._negative) {
-            _negative = false;
-            *this /= other.absoluteValue();
-            _negative = true;
-            return *this;
-        }
-
-        static auto remaining = BigInt("0");
-        remaining = absoluteValue();
-
-        static auto multiplier = BigInt("0");
-        multiplier.assign("1");
-
-        static auto finalResult = BigInt("0");
-        finalResult.assign("0");
-
-        static auto result = BigInt("0");
-        result.assign("0");
-
-        static auto chunkToSubtract = BigInt("0");
-        chunkToSubtract.assign("0");
-
-        while (true) {
-            // Find how much to subtract at a time
-            auto exponent = _digits.size();
-            chunkToSubtract = other;
-            chunkToSubtract.timesTenToThe(exponent);
-            while (chunkToSubtract > remaining) {
-                exponent -= 1;
-                chunkToSubtract.divideByTen();
-            }
-
-            // Count how many subtractions in this cycle
-            multiplier.assign("1");
-            multiplier.timesTenToThe(exponent);
-            result.assign("0");
-            while (remaining >= chunkToSubtract) {
-                result += multiplier;
-                remaining -= chunkToSubtract;
-            }
-
-            if (!(_negative && other._negative) && (_negative || other._negative)) {
-                result._negative = true;
-            }
-
-            finalResult += result;
-
-            if ((remaining < other) || multiplier == BigInt("1")) {
-                break;
+        for (auto i = oneSize-1; i>=0; --i) {
+            for (auto j = twoSize-1; j>=0; --j) {
+                const auto current = _digits[i] * other._digits[j];
+                const auto sum = current + result[i + j + 1];
+                result[i + j + 1] = sum % BASE;
+                result[i + j] += sum / BASE;
             }
         }
-
-        std::swap(*this, finalResult);
-        return *this;
+        return UnsignedBigInt::fromIntString(std::move(result));
     }
-
-    bool operator==(const BigInt& other) const {
-        return std::tie(_negative, _digits) == std::tie(other._negative, other._digits);
-    }
-
-    bool operator<(const BigInt& other) const {
-        if (_negative && !other._negative) {
-            return true;
+    UnsignedBigInt operator/(const UnsignedBigInt& other) const {
+        return divModLong(*this, other).first;
         }
-        if (!_negative && other._negative) {
-            return false;
-        }
-        if (_digits.size() == other._digits.size()) {
-            if (_negative) {
-                return std::lexicographical_compare(
-                    _digits.rbegin(), _digits.rend(), 
-                    other._digits.rbegin(), other._digits.rend(), std::greater{});
-            } else {
-                return std::lexicographical_compare(
-                    _digits.rbegin(), _digits.rend(), 
-                    other._digits.rbegin(), other._digits.rend());
-            }
-        }
-
-        if (_negative) {
-            return _digits.size() > other._digits.size();
-        } else {
-            return _digits.size() < other._digits.size();
-        }
+    UnsignedBigInt operator%(const UnsignedBigInt& other) const {
+        return divModLong(*this, other).second;
     }
-
-    bool operator>(const BigInt& other) const {
-        return (*this != other) && !(*this < other);
+    void multiplyByTen() {
+        assert(BASE == 10);
+        _digits.push_back(0);
     }
-
-    bool operator<=(const BigInt& other) const {
-        return (*this == other) || (*this < other);
+    void divideByTen() {
+        assert(BASE == 10);
+        _digits.pop_back();
     }
-
-    bool operator>=(const BigInt& other) const {
-        return (*this == other) || (*this > other);
-    }
-
-    void timesTenToThe(int exponent) {
+    void timesBaseToThe(int64_t exponent) {
         if (const bool divide = exponent < 0; divide) {
-            if (size_t(std::abs(exponent)) <= _digits.size()) {
-                _digits.erase(_digits.begin(), std::next(_digits.begin(), std::abs(exponent)));
-            }
+            _digits.erase(_digits.end() + exponent, _digits.end());
         } else {
-            _digits = std::string(std::abs(exponent), char(0)) + _digits;
+            _digits.insert(_digits.end(), exponent, 0);
         }
     }
-
-    // Get the absolute value of this number
-    BigInt absoluteValue() const {
-        auto copy = *this;
-        copy._negative = false;
-        return copy;
+    // number * 10^exponent
+    void timesTenToThe(int64_t exponent) {
+        assert(BASE == 10);
+        return timesBaseToThe(exponent);
     }
-};
 
-std::ostream& operator<<(std::ostream& os, const BigInt& value) {
-    if (value._digits.empty()) {
-        os << '0';
+    // Comparison operators
+    bool operator==(const UnsignedBigInt& other) const { return _digits == other._digits; }
+    bool operator!=(const UnsignedBigInt& other) const { return !(*this == other); }
+    bool operator<(const UnsignedBigInt& other) const {
+        const auto thisSize = _digits.size();
+        const auto otherSize = other._digits.size();
+        return std::tie(thisSize, _digits) < std::tie(otherSize, other._digits);
+    }
+    bool operator<=(const UnsignedBigInt& other) const { return (*this == other) || (*this < other); }
+    bool operator>(const UnsignedBigInt& other) const { return (*this != other) && !(*this < other); }
+    bool operator>=(const UnsignedBigInt& other) const { return (*this == other) || (*this > other); }
+
+    // Stream out operator
+    friend std::ostream& operator<<(std::ostream& os, const UnsignedBigInt& bigInt) {
+        for (auto c : bigInt._digits) {
+            os << uint64_t(c);
+        }
         return os;
     }
-    
-    if (value._negative) {
-        os << '-';
-    }
-    for (int i=value._digits.size()-1; i>=0; --i) {
-        os << int(value._digits[i]);
-    }
-    return os;
-}
+};
